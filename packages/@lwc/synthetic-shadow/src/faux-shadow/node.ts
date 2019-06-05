@@ -39,7 +39,7 @@ import {
     getFilteredChildNodes,
 } from './traverse';
 import { getTextContent } from '../3rdparty/polymer/text-content';
-import { getShadowRoot, hasSyntheticShadow, getIE11FakeShadowRootPlaceholder } from './shadow-root';
+import { getShadowRoot, isHostElement, getIE11FakeShadowRootPlaceholder } from './shadow-root';
 import { createStaticNodeList } from '../shared/static-node-list';
 
 // DO NOT CHANGE this:
@@ -105,7 +105,7 @@ export function isNodeShadowed(node: Node): boolean {
  * and elements with shadow dom attached to them.
  */
 export function hasMountedChildren(node: Node): boolean {
-    return isSlotElement(node) || hasSyntheticShadow(node);
+    return isSlotElement(node) || isHostElement(node);
 }
 
 function getShadowParent(node: Node, value: ParentNode & Node): (Node & ParentNode) | null {
@@ -219,7 +219,7 @@ function cloneNodePatched(this: Node, deep: boolean): Node {
  * This method only applies to elements with a shadow or slots
  */
 function childNodesGetterPatched(this: Node): NodeListOf<Node & Element> {
-    if (this instanceof Element && hasSyntheticShadow(this)) {
+    if (this instanceof Element && isHostElement(this)) {
         const owner = getNodeOwner(this);
         const childNodes = isNull(owner) ? [] : getAllMatches(owner, getFilteredChildNodes(this));
         if (
@@ -328,7 +328,7 @@ defineProperties(Node.prototype, {
     },
     textContent: {
         get(this: Node): string {
-            if (isNodeShadowed(this) || hasSyntheticShadow(this)) {
+            if (isNodeShadowed(this) || isHostElement(this)) {
                 return textContentGetterPatched.call(this);
             }
             // TODO: make this a global patch with a way to disable it
@@ -381,7 +381,7 @@ defineProperties(Node.prototype, {
     },
     compareDocumentPosition: {
         value(this: Node, otherNode: Node): number {
-            if (isNodeShadowed(this) || hasSyntheticShadow(this)) {
+            if (isNodeShadowed(this) || isHostElement(this)) {
                 return compareDocumentPositionPatched.call(this, otherNode);
             }
             // TODO: make this a global patch with a way to disable it
@@ -393,7 +393,7 @@ defineProperties(Node.prototype, {
     },
     contains: {
         value(this: Node, otherNode: Node): boolean {
-            if (isNodeShadowed(this) || hasSyntheticShadow(this)) {
+            if (isNodeShadowed(this) || isHostElement(this)) {
                 return containsPatched.call(this, otherNode);
             }
             // TODO: make this a global patch with a way to disable it
@@ -406,7 +406,7 @@ defineProperties(Node.prototype, {
     cloneNode: {
         value(this: Node, deep?: boolean): Node {
             deep = isUndefined(deep) || deep;
-            if (isNodeShadowed(this) || hasSyntheticShadow(this)) {
+            if (isNodeShadowed(this) || isHostElement(this)) {
                 return cloneNodePatched.call(this, deep);
             }
             // TODO: make this a global patch with a way to disable it
